@@ -1,10 +1,7 @@
 import os
 import warnings
-from dotenv import load_dotenv
-from flask import Flask, request, jsonify, render_template, session , url_for
-from langchain_community.llms import Ollama
+from flask import Flask, request, jsonify, render_template, session
 from langchain_openai.chat_models import ChatOpenAI
-from langchain_community.embeddings import OllamaEmbeddings
 from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import PromptTemplate
@@ -15,14 +12,13 @@ from operator import itemgetter
 # Suppress the pydantic warning
 warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
-# Load environment variables
-load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Replace with your OpenAI API key
+OPENAI_API_KEY = "sk-proj-cBzX2fh5041WKDxOP8UZT3BlbkFJUyCAtPhxQlWpdYUNhaJ8"
 MODEL = "gpt-4-turbo"
 
 # Initialize the model and embeddings
 model = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=MODEL)
-embeddings = OpenAIEmbeddings()
+embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)  # Pass the API key here
 parser = StrOutputParser()
 
 # Define the prompt template
@@ -50,16 +46,6 @@ retriever = vectorstore.as_retriever()
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
-
-chain = (
-    {
-        "context": itemgetter("question") | retriever,
-        "question": itemgetter("question"),
-    }
-    | prompt
-    | model
-    | parser
-)
 
 # Function for generating LLM response
 def format_answer(answer):
@@ -95,8 +81,6 @@ def chat():
     session['messages'].append({"role": "", "content": response})
     
     return jsonify({"message": response})
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
